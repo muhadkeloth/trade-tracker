@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stock P&amp;L Calculator</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="tile">
+  <header>
+    <div>
+      <h1>Stock P&amp;L Calculator</h1>
+      <p class="sub">Entry · Target · SL · Qty · Leverage · Brokerage + charges</p>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="calc">Calc</button>
+      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab" data-tab="history">Track</button>
+    </nav>
+  </header>
+
+  <!-- CALCULATOR -->
+  <section id="tab-calc" class="tabpage active">
+    <div class="grid2">
+      <label>Side
+        <div class="seg" id="sideSeg">
+          <button data-val="long" class="on">Long</button>
+          <button data-val="short">Short</button>
+        </div>
+      </label>
+      <label>Exchange
+        <div class="seg" id="exchSeg">
+          <button data-val="NSE" class="on">NSE</button>
+          <button data-val="BSE">BSE</button>
+        </div>
+      </label>
+    </div>
+
+    <label>Segment
+      <div class="seg three" id="segSeg">
+        <button data-val="intraday" class="on">Intraday</button>
+        <button data-val="delivery">Delivery</button>
+        <button data-val="mtf">MTF</button>
+      </div>
+    </label>
+
+    <div class="grid2">
+      <label>Entry / Buy price (₹)
+        <input id="entry" type="number" min="0" step="any" value="100" />
+      </label>
+      <label>Quantity
+        <input id="qty" type="number" min="1" step="1" value="100" />
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label>Target (<span id="targetModeLabel">₹</span>)
+        <div class="withtoggle">
+          <input id="targetVal" type="number" step="any" value="200" />
+          <button id="targetMode" class="mini" title="Toggle ₹ / %">₹</button>
+        </div>
+      </label>
+      <label>Stop-loss (<span id="slModeLabel">₹</span>)
+        <div class="withtoggle">
+          <input id="slVal" type="number" step="any" value="90" />
+          <button id="slMode" class="mini" title="Toggle ₹ / %">₹</button>
+        </div>
+      </label>
+    </div>
+    <p class="hint">Target / SL accept <b>price (₹)</b> or <b>% from entry</b> — tap ₹/% to switch.</p>
+
+    <div class="levrow">
+      <label class="check"><input id="levOn" type="checkbox" /> Use leverage</label>
+      <label class="levmult">Leverage <input id="levMult" type="number" min="1" step="any" value="5" /> x</label>
+    </div>
+
+    <button id="calcBtn" class="primary">Calculate</button>
+    <label class="check small"><input id="autosave" type="checkbox" checked /> Track this calculation in history</label>
+
+    <div id="results" class="hidden">
+      <div class="cards">
+        <div class="card profit">
+          <h3>Target (profit)</h3>
+          <div class="big" id="tNet">—</div>
+          <div class="muted" id="tNetPct">—</div>
+          <dl>
+            <div><dt>Exit price</dt><dd id="tExit">—</dd></div>
+            <div><dt>Sell total</dt><dd id="tSell">—</dd></div>
+            <div><dt>Buy total</dt><dd id="tBuy">—</dd></div>
+            <div><dt>Gross P&amp;L</dt><dd id="tGross">—</dd></div>
+            <div><dt>Charges (total)</dt><dd id="tChg">—</dd></div>
+            <div><dt>↳ Brokerage</dt><dd id="tBrok">—</dd></div>
+            <div><dt>↳ Other charges</dt><dd id="tOther">—</dd></div>
+            <div><dt>Turnover</dt><dd id="tTurn">—</dd></div>
+          </dl>
+        </div>
+        <div class="card loss">
+          <h3>Stop-loss</h3>
+          <div class="big" id="sNet">—</div>
+          <div class="muted" id="sNetPct">—</div>
+          <dl>
+            <div><dt>Exit price</dt><dd id="sExit">—</dd></div>
+            <div><dt>Sell total</dt><dd id="sSell">—</dd></div>
+            <div><dt>Buy total</dt><dd id="sBuy">—</dd></div>
+            <div><dt>Gross P&amp;L</dt><dd id="sGross">—</dd></div>
+            <div><dt>Charges (total)</dt><dd id="sChg">—</dd></div>
+            <div><dt>↳ Brokerage</dt><dd id="sBrok">—</dd></div>
+            <div><dt>↳ Other charges</dt><dd id="sOther">—</dd></div>
+            <div><dt>Turnover</dt><dd id="sTurn">—</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="strip">
+        <div><span>Margin needed</span><b id="rMargin">—</b></div>
+        <div><span>Return on margin (target)</span><b id="rMarginPct">—</b></div>
+        <div><span>Breakeven</span><b id="rBreakeven">—</b></div>
+      </div>
+
+      <details>
+        <summary>Charge breakup — target trade</summary>
+        <dl class="breakup" id="breakT"></dl>
+      </details>
+      <details>
+        <summary>Charge breakup — stop-loss trade</summary>
+        <dl class="breakup" id="breakS"></dl>
+      </details>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" class="tabpage">
+    <p class="hint">Brokerage &amp; charges live here. They apply to every calculation and are saved in the browser.</p>
+    <h3>Leverage</h3>
+    <div class="grid2">
+      <label>Default leverage (x)<input id="s_levMult" type="number" step="any" /></label>
+      <label class="check">Enable by default<input id="s_levOn" type="checkbox" /></label>
+    </div>
+    <h3>Brokerage (% per side, cap ₹ per side)</h3>
+    <div class="grid2">
+      <label>Intraday %<input id="s_intraPct" type="number" step="any" /></label>
+      <label>Intraday cap ₹<input id="s_intraFlat" type="number" step="any" /></label>
+      <label>Delivery %<input id="s_delPct" type="number" step="any" /></label>
+      <label>Delivery cap ₹<input id="s_delFlat" type="number" step="any" /></label>
+      <label>MTF %<input id="s_mtfPct" type="number" step="any" /></label>
+      <label>MTF cap ₹<input id="s_mtfFlat" type="number" step="any" /></label>
+    </div>
+    <h3>Exchange charges (% of turnover)</h3>
+    <div class="grid2">
+      <label>NSE Intraday<input id="s_nseIntra" type="number" step="any" /></label>
+      <label>NSE Delivery<input id="s_nseDel" type="number" step="any" /></label>
+      <label>NSE MTF<input id="s_nseMtf" type="number" step="any" /></label>
+      <label>BSE Intraday<input id="s_bseIntra" type="number" step="any" /></label>
+      <label>BSE Delivery<input id="s_bseDel" type="number" step="any" /></label>
+      <label>BSE MTF<input id="s_bseMtf" type="number" step="any" /></label>
+    </div>
+    <h3>Taxes &amp; other</h3>
+    <div class="grid2">
+      <label>STT Intraday sell %<input id="s_sttIntra" type="number" step="any" /></label>
+      <label>STT Delivery/MTF %<input id="s_sttDel" type="number" step="any" /></label>
+      <label>STT MTF %<input id="s_sttMtf" type="number" step="any" /></label>
+      <label>Stamp Intraday buy %<input id="s_stampIntra" type="number" step="any" /></label>
+      <label>Stamp Delivery buy %<input id="s_stampDel" type="number" step="any" /></label>
+      <label>Stamp MTF buy %<input id="s_stampMtf" type="number" step="any" /></label>
+      <label>SEBI %<input id="s_sebi" type="number" step="any" /></label>
+      <label>IPFT %<input id="s_ipft" type="number" step="any" /></label>
+      <label>GST % (on brok.+exch.)<input id="s_gst" type="number" step="any" /></label>
+      <label>DP charge ₹ (Del/MTF sell)<input id="s_dp" type="number" step="any" /></label>
+    </div>
+    <div class="row">
+      <button id="saveSettings" class="primary">Save settings</button>
+      <button id="resetSettings">Reset defaults</button>
+    </div>
+    <p id="settingsMsg" class="hint"></p>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="tab-history" class="tabpage">
+    <div class="row">
+      <button id="refreshHist">Refresh</button>
+      <button id="clearHist" class="danger">Clear all</button>
+    </div>
+    <div id="histList"></div>
+  </section>
+</div>
+<script src="calculator.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

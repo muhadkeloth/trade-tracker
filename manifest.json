@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Stock P&L Calculator with Brokerage",
+  "version": "1.0.0",
+  "description": "Click the icon to open a tile that calculates profit/loss, targets, SL, leverage, brokerage and other charges (NSE/BSE, Intraday/Delivery/MTF).",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Stock P&L Calculator"
+  },
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
