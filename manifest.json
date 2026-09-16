@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Trade Tracker",
   "version": "1.1.0",
-  "description": "Trade Tracker — click the tile to calculate entry, target, stop-loss, quantity, leverage, brokerage and other charges (NSE/BSE, Intraday/Delivery/MTF).",
+  "description": "Calculate entry, target, stop-loss, quantity, leverage & charges for NSE/BSE Intraday, Delivery & MTF trades.",
   "action": {
     "default_popup": "popup.html",
     "default_title": "Trade Tracker",
