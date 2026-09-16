@@ -1,11 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "Stock P&L Calculator with Brokerage",
-  "version": "1.0.0",
-  "description": "Click the icon to open a tile that calculates profit/loss, targets, SL, leverage, brokerage and other charges (NSE/BSE, Intraday/Delivery/MTF).",
+  "name": "Trade Tracker",
+  "version": "1.1.0",
+  "description": "Trade Tracker — click the tile to calculate entry, target, stop-loss, quantity, leverage, brokerage and other charges (NSE/BSE, Intraday/Delivery/MTF).",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Stock P&L Calculator"
+    "default_title": "Trade Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "permissions": ["storage"],
   "background": {

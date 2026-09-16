@@ -3,7 +3,7 @@
  */
 
 const DEFAULT_SETTINGS = {
-  leverageEnabled: false,
+  leverageEnabled: true,
   leverageMultiplier: 5,
 
   // Brokerage: % per side, capped at flat Rs per side (per executed order)
