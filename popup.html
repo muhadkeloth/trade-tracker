@@ -76,9 +76,13 @@
         <label class="check"><input id="levOn" type="checkbox" checked /> Use leverage <span class="pill" id="levAuto">auto for Intraday</span></label>
         <label class="levmult"><input id="levMult" type="number" min="1" step="any" value="5" /> x</label>
       </div>
+      <div class="levrow">
+        <label class="check"><input id="capOn" type="checkbox" checked /> Use capital <span class="pill" id="capPill">₹ 10,000</span></label>
+        <span class="hint" id="capHint" style="margin:0">auto qty</span>
+      </div>
       <div class="crow">
         <button id="calcBtn" class="primary">Calculate</button>
-        <button id="clearBtn" class="ghost" title="Clear inputs">Clear</button>
+        <button id="clearBtn" class="ghost" title="Reset entry, quantity, target & stop-loss to empty">Reset</button>
       </div>
       <label class="check small"><input id="autosave" type="checkbox" checked /> Track this in history</label>
     </div>
@@ -129,6 +133,10 @@
   <!-- SETTINGS -->
   <section id="tab-settings" class="tabpage">
     <p class="hint">Brokerage &amp; charges live here. Saved automatically in this browser.</p>
+    <h3>Capital</h3>
+    <div class="grid2">
+      <label class="fld">Capital (₹)<input id="s_capital" type="number" min="0" step="any" /></label>
+    </div>
     <h3>Leverage</h3>
     <div class="grid2">
       <label class="fld">Default leverage (x)<input id="s_levMult" type="number" step="any" /></label>

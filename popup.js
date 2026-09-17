@@ -35,6 +35,7 @@
     // Default: leverage ON for Intraday/MTF, OFF for Delivery
     if (state.segment === 'delivery') $('levOn').checked = false;
     else $('levOn').checked = true;
+    if (typeof autoSizeQtyFromCapital === 'function') autoSizeQtyFromCapital();
     persistFormSoon();
   }
 
@@ -72,6 +73,7 @@
       entry: $('entry').value, qty: $('qty').value,
       targetVal: $('targetVal').value, slVal: $('slVal').value,
       levOn: $('levOn').checked, levMult: $('levMult').value,
+      capOn: $('capOn') ? $('capOn').checked : false,
       autosave: $('autosave').checked
     };
   }
@@ -91,7 +93,48 @@
     if (typeof f.levOn === 'boolean') $('levOn').checked = f.levOn;
     else $('levOn').checked = state.segment !== 'delivery';
     $('levMult').value = f.levMult || getSettings().leverageMultiplier || 5;
+    if ($('capOn')) $('capOn').checked = f.capOn !== false;
     $('autosave').checked = f.autosave !== false;
+    refreshCapitalUI();
+  }
+
+  function getCapital() {
+    const c = parseFloat(getSettings().capital);
+    return Number.isFinite(c) && c > 0 ? c : 10000;
+  }
+
+  function refreshCapitalUI() {
+    const pill = $('capPill');
+    if (pill) pill.textContent = '₹ ' + Number(getCapital()).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    updateCapHint();
+  }
+
+  function computeAutoQty() {
+    const entry = parseFloat($('entry').value);
+    if (!(entry > 0)) return 0;
+    const levOn = $('levOn').checked;
+    const levMult = parseFloat($('levMult').value) || 5;
+    const fn = (typeof calcQuantityFromCapital === 'function') ? calcQuantityFromCapital : null;
+    if (fn) return fn(getCapital(), entry, levOn, levMult);
+    const mult = levOn ? Math.max(1, levMult) : 1;
+    return Math.floor((getCapital() * mult) / entry);
+  }
+
+  function updateCapHint() {
+    const hint = $('capHint');
+    if (!hint) return;
+    if (!($('capOn') && $('capOn').checked)) { hint.textContent = 'auto qty'; return; }
+    const q = computeAutoQty();
+    hint.textContent = q > 0 ? ('≈ ' + q + ' qty') : 'enter entry price';
+  }
+
+  // Auto-size qty from capital when enabled. Manual edits to qty are respected:
+  // we only overwrite qty on entry/leverage/capital/toggle changes, never on qty typing.
+  function autoSizeQtyFromCapital() {
+    if (!($('capOn') && $('capOn').checked)) { updateCapHint(); return; }
+    const q = computeAutoQty();
+    if (q > 0) $('qty').value = q;
+    updateCapHint();
   }
 
   function persistFormSoon() {
@@ -99,10 +142,14 @@
     saveTimer = setTimeout(() => chrome.storage.local.set({ form: collectForm() }), 250);
   }
 
-  ['entry', 'qty', 'targetVal', 'slVal', 'levMult'].forEach((id) => {
+  ['qty', 'targetVal', 'slVal'].forEach((id) => {
     $(id).addEventListener('input', () => { persistFormSoon(); liveCalcSoon(); });
   });
+  $('entry').addEventListener('input', () => { autoSizeQtyFromCapital(); persistFormSoon(); liveCalcSoon(); });
+  $('levMult').addEventListener('input', () => { autoSizeQtyFromCapital(); persistFormSoon(); liveCalcSoon(); });
   ['levOn', 'autosave'].forEach((id) => $(id).addEventListener('change', persistFormSoon));
+  if ($('levOn')) $('levOn').addEventListener('change', () => { autoSizeQtyFromCapital(); liveCalcSoon(); });
+  if ($('capOn')) $('capOn').addEventListener('change', () => { autoSizeQtyFromCapital(); persistFormSoon(); liveCalcSoon(); });
 
   function liveCalcSoon() {
     clearTimeout(calcTimer);
@@ -112,16 +159,18 @@
   function loadAll() {
     chrome.storage.local.get(['settings', 'form'], (res) => {
       state.settings = Object.assign({}, DEFAULT_SETTINGS, res.settings || {});
+      if (!Number.isFinite(parseFloat(state.settings.capital))) state.settings.capital = 10000;
       fillSettingsForm();
+      refreshCapitalUI();
       if (res.form) restoreForm(res.form);
-      else { $('levOn').checked = true; $('levMult').value = state.settings.leverageMultiplier; }
+      else { $('levOn').checked = true; $('levMult').value = state.settings.leverageMultiplier; if ($('capOn')) $('capOn').checked = true; refreshCapitalUI(); }
       // live-restore last result if inputs valid
       tryCalculate(false);
     });
   }
 
   const MAP = [
-    ['s_levMult', 'leverageMultiplier'], ['s_intraPct', 'intradayBrokeragePct'],
+    ['s_capital', 'capital'], ['s_levMult', 'leverageMultiplier'], ['s_intraPct', 'intradayBrokeragePct'],
     ['s_intraFlat', 'intradayBrokerageFlat'], ['s_delPct', 'deliveryBrokeragePct'],
     ['s_delFlat', 'deliveryBrokerageFlat'], ['s_mtfPct', 'mtfBrokeragePct'],
     ['s_mtfFlat', 'mtfBrokerageFlat'], ['s_nseIntra', 'exchNseIntraday'],
@@ -140,13 +189,16 @@
   $('saveSettings').addEventListener('click', () => {
     const s = Object.assign({}, state.settings);
     MAP.forEach(([id, k]) => { const v = parseFloat($(id).value); if (Number.isFinite(v)) s[k] = v; });
+    if (!(s.capital > 0)) s.capital = 10000;
     s.leverageEnabled = $('s_levOn').checked;
     state.settings = s;
     chrome.storage.local.set({ settings: s }, () => { $('settingsMsg').textContent = 'Saved ✓'; setTimeout(() => $('settingsMsg').textContent = '', 1500); });
+    refreshCapitalUI();
+    autoSizeQtyFromCapital();
   });
   $('resetSettings').addEventListener('click', () => {
     state.settings = Object.assign({}, DEFAULT_SETTINGS);
-    chrome.storage.local.set({ settings: state.settings }, fillSettingsForm);
+    chrome.storage.local.set({ settings: state.settings }, () => { fillSettingsForm(); refreshCapitalUI(); });
   });
 
   function breakupHtml(r) {
@@ -242,8 +294,11 @@
 
   $('calcBtn').addEventListener('click', () => tryCalculate(true));
   $('clearBtn').addEventListener('click', () => {
-    ['entry', 'qty', 'targetVal', 'slVal'].forEach((id) => $(id).value = '');
-    $('results').classList.add('hidden'); $('emptyState').classList.remove('hidden');
+    // Reset entry, quantity, target & stop-loss to empty
+    ['entry', 'qty', 'targetVal', 'slVal'].forEach((id) => { const el = $(id); if (el) el.value = ''; });
+    updateCapHint();
+    const rEl = $('results'); if (rEl) rEl.classList.add('hidden');
+    const eEl = $('emptyState'); if (eEl) eEl.classList.remove('hidden');
     chrome.storage.local.remove(['form', 'lastResult']);
   });
 

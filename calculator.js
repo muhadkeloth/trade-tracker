@@ -5,6 +5,7 @@
 const DEFAULT_SETTINGS = {
   leverageEnabled: true,
   leverageMultiplier: 5,
+  capital: 10000,
 
   // Brokerage: % per side, capped at flat Rs per side (per executed order)
   intradayBrokeragePct: 0.03,
@@ -166,6 +167,18 @@ function resolvePrice(entry, value, mode, kind, side = 'long') {
   return value;
 }
 
+/* Quantity you can buy from capital.
+ * If leverage is on: buyingPower = capital * multiplier, else buyingPower = capital.
+ * qty = floor(buyingPower / entry). Returns 0 when entry/capital invalid.
+ */
+function calcQuantityFromCapital(capital, entry, leverageOn, leverageMultiplier) {
+  capital = num(capital);
+  entry = num(entry);
+  if (!(capital > 0) || !(entry > 0)) return 0;
+  const mult = leverageOn ? Math.max(1, num(leverageMultiplier, 1)) : 1;
+  return Math.max(0, Math.floor((capital * mult) / entry));
+}
+
 /* Full scenario: entry + target + SL => two calculateTrade results + shared info */
 function calculateScenario(input) {
   const {
@@ -207,5 +220,5 @@ function calculateScenario(input) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { DEFAULT_SETTINGS, calculateTrade, resolvePrice, calculateScenario };
+  module.exports = { DEFAULT_SETTINGS, calculateTrade, resolvePrice, calculateScenario, calcQuantityFromCapital };
 }
